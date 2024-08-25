@@ -1,0 +1,218 @@
+Linux Level:
+
+traceroute <ip-address>
+Traces the path packets take from the Linux host to a destination IP address, showing each hop.
+
+netstat -an
+Displays all network connections, listening ports, and routing tables.
+
+ss -tuln
+Shows all listening ports and open sockets.
+
+iptables -L -v -n
+Lists all firewall rules currently configured on the Linux host.
+
+curl -v <url>
+Verbosely sends an HTTP request to a URL, useful for debugging HTTP connections and response headers.
+
+nslookup <domain> or dig <domain>
+Resolves domain names to IP addresses and provides detailed DNS query information.
+
+tcpdump -i <interface> <expression>
+Captures and analyzes network traffic on a specified interface. Useful for deep packet inspection.
+
+route -n or ip route show
+Displays the kernel IP routing table, showing the network paths to various destinations.
+
+
+
+1) lsns -t pid    --> To list the process ID of containers inside node
+
+2) ip netns identify <process-id>  --> which network namespace this container process belongs.
+
+3) ip add  --> to list how many interfaces running on this node.
+
+4) ip add | grep -A1 veth
+
+5) for i in <pid> <pid> <pid>; do ip netns identify $i; done   --> To identify which network namespace this container process belongs.
+
+6) ip netns exec <cni-*> ip add  
+
+7) kubectl exec pod1 -c container1 -- ip add
+
+8) kubectl exec pod1 -c container1 -- curl -s localhost:80 -vvv
+
+9) kubectl get pods -o=jsonpath='{range .items[*]}{"podName: " }{.metadata.name}{"\t"}{"podIP: "}{.status.podIP}{"\n"}{end}'
+
+10) kubectl get pod1 -c container1 -- curl <second_pod_ip>:80
+
+11) A container network Interface is a project of the cloud native computing foundation it consist of specification and set of libraries used
+    for writing plugins, for networking configuration of interfaces for both Linux and windows conatiners,
+
+    CNI allocates networking resources when conatiners are created and remove them when resources are deleted.
+
+    CNI provides a standardized way for containers orchestrators, such as kubernetes to ingerate with various networking solutions and plugins
+    ensuring consistent networking.
+
+12) cilium version --client && hubble version
+
+13) cilium install --version 1.15.4 --wait
+
+14) cilium status
+
+15) cilium connectivity test
+
+16) helm list -n kube-system --filter "cilium"
+
+17) helm repo add cilium https://helm.cilium.io/
+
+18) helm upgrade cilium cilium/cilium --version 1.15.4 --namespace kube-system --reuse-values --set hubble.relay.enabled=true --set hubble.ui.enabled=true
+
+19) cilium hubble port-forward&
+
+20) ps -ef | grep <pid>
+
+21) hubble status
+
+22) hubble observe
+
+23) ip add | grep -Ai <interafce-name>
+
+24) ip netns exec <cni-*> ip add
+
+25) ip -br add show 
+
+26) kubectl run -i --tty --rm test-connection --image=centos --restart=Never -- bash
+    export
+
+27) kubectl expose deployment mysql-deployment \
+  --namespace=database \
+  --name=mysql-service \
+  --port=3306 \
+  --target-port=3306 \
+  --protocol=TCP \
+  --selector=role=database \
+  --type=ClusterIP
+
+28) mysql -h $DATABASE_SERVICE_SERVICE_HOST -P $DATABASE_SERVICE_SERVICE_PORT -u user -p password
+
+29) psql -h $DATABASE_SERVICE_SERVICE_HOST -p $DATABASE_SERVICE_SERVICE_PORT -U $POSTGRES_USER -d $POSTGRES_DB
+
+30) 
+apiVersion: v1
+kind: Service
+metadata:
+  name: google-analytics
+  namespace: website
+spec:
+  externalName: www.saikrishna.com
+  selector:
+    app: my-app
+  sessionAffinity: None
+  type: ExternalName
+
+
+31) kubectl exec -it -n kube-system cilium-hs6rt2u -- cilium-dbg status
+
+32) kubectl exec -it -n kube-system cilium-hs6rt2u -- cilium-health status
+
+33) kubectl run -i --tty --rm debug --image=curlimages/curl --restart=Never -- curl www.google.com --connect-timeout 2
+
+34) 
+
+# check if secret exists
+$ kubectl exec test-701078429-s5kca ls /var/run/secrets/kubernetes.io/serviceaccount/
+ca.crt
+namespace
+token
+
+# get service IP of master
+$ kubectl get services
+NAME         CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   10.0.0.1     <none>        443/TCP   1d
+
+# check base connectivity from cluster inside
+$ kubectl exec test-701078429-s5kca -- curl -k https://10.0.0.1
+Unauthorized
+
+
+# connect using tokens
+$ TOKEN_VALUE=$(kubectl exec test-701078429-s5kca -- cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+
+$ echo $TOKEN_VALUE
+eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3Mi....9A
+$ kubectl exec test-701078429-s5kca -- curl --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H  "Authorization: Bearer $TOKEN_VALUE" https://10.0.0.1
+{
+  "paths": [
+    "/api",
+    "/api/v1",
+    "/apis",
+    "/apis/apps",
+    "/apis/apps/v1alpha1",
+    "/apis/authentication.k8s.io",
+    "/apis/authentication.k8s.io/v1beta1",
+    "/apis/authorization.k8s.io",
+    "/apis/authorization.k8s.io/v1beta1",
+    "/apis/autoscaling",
+    "/apis/autoscaling/v1",
+    "/apis/batch",
+    "/apis/batch/v1",
+    "/apis/batch/v2alpha1",
+    "/apis/certificates.k8s.io",
+    "/apis/certificates.k8s.io/v1alpha1",
+    "/apis/extensions",
+    "/apis/extensions/v1beta1",
+    "/apis/policy",
+    "/apis/policy/v1alpha1",
+    "/apis/rbac.authorization.k8s.io",
+    "/apis/rbac.authorization.k8s.io/v1alpha1",
+    "/apis/storage.k8s.io",
+    "/apis/storage.k8s.io/v1beta1",
+    "/healthz",
+    "/healthz/ping",
+    "/logs",
+    "/metrics",
+    "/swaggerapi/",
+    "/ui/",
+    "/version"
+  ]
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
