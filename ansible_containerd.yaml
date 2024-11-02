@@ -1,0 +1,92 @@
+---
+- name: Install runc, containerd, and nerdctl
+  hosts: all
+  become: true
+  tasks:
+
+    - name: Ensure required packages are installed
+      package:
+        name:
+          - curl
+          - wget
+          - git
+        state: present
+
+    - name: Install runc
+      command: |
+        curl -LO https://github.com/opencontainers/runc/releases/latest/download/runc.amd64
+        install -m 755 runc.amd64 /usr/local/sbin/runc
+      args:
+        chdir: /tmp
+      register: runc_install
+      failed_when: runc_install.rc != 0
+
+    - name: Clean up runc installation files
+      file:
+        path: /tmp/runc.amd64
+        state: absent
+      when: runc_install.changed
+
+    - name: Install containerd
+      command: |
+        wget https://github.com/containerd/containerd/releases/latest/download/containerd-1.7.0-linux-amd64.tar.gz
+        tar -C /usr/local --strip-components=1 -xzf containerd-1.7.0-linux-amd64.tar.gz
+        systemctl daemon-reload
+        systemctl enable containerd
+        systemctl start containerd
+      args:
+        chdir: /tmp
+      register: containerd_install
+      failed_when: containerd_install.rc != 0
+
+    - name: Clean up containerd installation files
+      file:
+        path: /tmp/containerd-1.7.0-linux-amd64.tar.gz
+        state: absent
+      when: containerd_install.changed
+
+    - name: Install nerdctl
+      command: |
+        curl -SL https://github.com/nerdctl/nerdctl/releases/latest/download/nerdctl-{{ nerdctl_version }}-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
+      vars:
+        nerdctl_version: v0.24.0
+      register: nerdctl_install
+      failed_when: nerdctl_install.rc != 0
+
+    - name: Ensure nerdctl binary is executable
+      file:
+        path: /usr/local/bin/nerdctl
+        mode: '0755'
+      when: nerdctl_install.changed
+
+    - name: Verify runc installation
+      command: runc --version
+      register: runc_version
+
+    - name: Print runc version
+      debug:
+        msg: "Installed runc version: {{ runc_version.stdout }}"
+
+    - name: Verify containerd installation
+      command: containerd --version
+      register: containerd_version
+
+    - name: Print containerd version
+      debug:
+        msg: "Installed containerd version: {{ containerd_version.stdout }}"
+
+    - name: Verify nerdctl installation
+      command: nerdctl --version
+      register: nerdctl_version
+
+    - name: Print nerdctl version
+      debug:
+        msg: "Installed nerdctl version: {{ nerdctl_version.stdout }}"
+
+    - name: List images using nerdctl
+      command: nerdctl images
+      register: nerdctl_images
+
+    - name: Print list of images
+      debug:
+        msg: "List of images: {{ nerdctl_images.stdout_lines }}"
